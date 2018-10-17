@@ -42,7 +42,7 @@ sys.path.append(ROOT_DIR)  # 添加工作目录到系统目录
 from mrcnn.config import Config
 from mrcnn import model as modellib, utils
 
-# 基于COCO的预训练模型
+# 制定基于COCO的预训练模型的路径
 COCO_WEIGHTS_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
 
 # Directory to save logs and model checkpoints, if not provided
@@ -59,6 +59,7 @@ class GrasbaConfig(Config):
     Derives from the base Config class and overrides some values.
     """
     # Give the configuration a recognizable name
+    # 数据集名称
     NAME = "grasba"
 
     # We use a GPU with 12GB memory, which can fit two images.
@@ -66,6 +67,7 @@ class GrasbaConfig(Config):
     IMAGES_PER_GPU = 2
 
     # Number of classes (including background)
+    # 数据集内包含类别数目 （包含背景）
     NUM_CLASSES = 1 + 1 + 1  # Background + ball + hand
 
     # Number of training steps per epoch
@@ -82,12 +84,12 @@ class GrasbaConfig(Config):
 class GrasbaDataset(utils.Dataset):
 
     def load_grasba(self, dataset_dir, subset):
-        """Load a subset of the Balloon dataset.
+        """Load a subset of the Grasba dataset.
         dataset_dir: Root directory of the dataset.
         subset: Subset to load: train or val
         """
         # Add classes. We now have 2 class to add.
-        # 添加类，目前我们具有两类
+        # 添加类别
         self.add_class("grasba", 1, "ball")
         self.add_class("grasba", 2, "hand")
 
@@ -166,7 +168,7 @@ class GrasbaDataset(utils.Dataset):
         for i, p in enumerate(info["polygons"]):
             # Get indexes of pixels inside the polygon and set them to 1
             rr, cc = skimage.draw.polygon(p['all_points_y'], p['all_points_x'])
-            mask[rr, cc, i] = 1
+            mask[rr, cc, i] = info
 
         # Return mask, and array of class IDs of each instance. Since we have
         # one class ID only, we return an array of 1s
