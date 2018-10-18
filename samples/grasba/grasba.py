@@ -131,8 +131,10 @@ class GrasbaDataset(utils.Dataset):
             # The if condition is needed to support VIA versions 1.x and 2.x.
             if type(a['regions']) is dict:
                 polygons = [r['shape_attributes'] for r in a['regions'].values()]
+                region_class = [r['region_attributes']['class'] for r in a['regions'].values()]
             else:
                 polygons = [r['shape_attributes'] for r in a['regions']]
+                region_class = [r['region_attributes']['class'] for r in a['regions']]
 
             # load_mask() needs the image size to convert polygons to masks.
             # Unfortunately, VIA doesn't include it in JSON, so we must read
@@ -146,7 +148,8 @@ class GrasbaDataset(utils.Dataset):
                 image_id=a['filename'],  # TODO: make file name unique to be a valid id
                 path=image_path,
                 width=width, height=height,
-                polygons=polygons)
+                polygons=polygons,
+                class_id=region_class)
 
     def load_mask(self, image_id):
         """Generate instance masks for an image.
@@ -168,11 +171,14 @@ class GrasbaDataset(utils.Dataset):
         for i, p in enumerate(info["polygons"]):
             # Get indexes of pixels inside the polygon and set them to 1
             rr, cc = skimage.draw.polygon(p['all_points_y'], p['all_points_x'])
-            mask[rr, cc, i] = info
+            mask[rr, cc, i] = 1
 
-        # Return mask, and array of class IDs of each instance. Since we have
-        # one class ID only, we return an array of 1s
-        return mask.astype(np.bool), np.ones([mask.shape[-1]], dtype=np.int32)
+        # 取得 class_id.
+        class_ids = np.array(info["class_id"])
+
+        # Return mask, and array of class IDs of each instance.
+        # 返回 mask（布尔型）和 class IDs（整型）
+        return mask.astype(np.bool), class_ids.astype(np.int32)
 
     def image_reference(self, image_id):
         """Return the path of the image."""
