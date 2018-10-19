@@ -12,7 +12,7 @@ Usage: import the module (see Jupyter notebooks for examples), or run from
        the command line as such:
 
     # Train a new model starting from pre-trained COCO weights
-    python3 balloon.py train --dataset=/path/to/balloon/dataset --weights=coco
+    python grasba.py train --dataset=E:\GitHub\Mask_RCNN_tactile\datasets\grasba --weights=coco
 
     # Resume training a model that you had trained earlier
     python3 balloon.py train --dataset=/path/to/balloon/dataset --weights=last
