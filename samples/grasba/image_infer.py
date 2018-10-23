@@ -64,7 +64,8 @@ config = InferenceConfig()
 # Useful if you're training a model on the same
 # machine, in which case use CPU and leave the
 # GPU for training.
-DEVICE = "/gpu:0"  # /cpu:0 or /gpu:0
+os.environ["CUDA_VISIBLE_DEVICES"] = "0" # comment if use gpu
+DEVICE = "/cpu:0"  # /cpu:0 or /gpu:0
 
 # Inspect the model in training or inference modes
 # values: 'inference' or 'training'
@@ -82,15 +83,19 @@ def get_ax(rows=1, cols=1, size=16):
     _, ax = plt.subplots(rows, cols, figsize=(size * cols, size * rows))
     return ax
 
-
+# 执行函数
 def apply_effect(image, result, colors):
     # 参数提取
-    frame = image
     p = result[0]
-    # 选择最多 MAX_CLASSES 实例的颜色
+    figsize = (image.shape[1]/100.0, image.shape[0]/100.0)
+    boxes = p['rois']
+    masks = p['masks']
+    class_ids = p['class_ids']
+    class_names = ['BG', 'ball', 'hand']
+    scores = p['scores']
 
-    output = real_time_visual.display_instances(frame, p['rois'], p['masks'], p['class_ids'],
-                               ['BG', 'ball', 'hand'], p['scores'], colors=colors, real_time=True)
+    output = real_time_visual.display_instances(image, boxes, masks, class_ids, class_names, scores,
+                                                colors=colors, real_time=True, figsize=figsize)
 
     return output
 
@@ -110,9 +115,14 @@ print("Loading weights ", weights_path)
 model.load_weights(weights_path, by_name=True)
 
 # 加载数据
-# image_path = "E:\\GitHub\\Mask_RCNN_tactile\\datasets\\grasba\\val\\red_ball.png"
-image_path = None
-video_path = "E:\\GitHub\\Mask_RCNN_tactile\\datasets\\grasba\\val\\red_ball.mp4"
+# 图像和视频选择
+image_path = os.path.join(GRASBA_DIR, "val", "red_ball.png")
+# image_path = None
+video_path = os.path.join(GRASBA_DIR, "val", "red_ball.mp4")
+video_path = None
+# 标注颜色选取
+MAX_CLASSES = 5
+colors = real_time_visual.random_colors(MAX_CLASSES)
 
 if image_path:
     print("Running on {}".format(image_path))
@@ -121,7 +131,7 @@ if image_path:
     # 识别物体
     result = model.detect([image], verbose=1)
     # 操作
-    image_output = apply_effect(image, result)
+    image_output = apply_effect(image, result, colors)
     # 输出
     file_name = os.path.join(OUTPUT_DIR, "output_{:%Y%m%dT%H%M%S}.png".format(datetime.datetime.now()))
     skimage.io.imsave(file_name, image_output)
@@ -131,13 +141,11 @@ elif video_path:
     width = int(vcapture.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(vcapture.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = vcapture.get(cv2.CAP_PROP_FPS)
-    MAX_CLASSES = 5
-    colors = real_time_visual.random_colors(MAX_CLASSES)
 
     # video writer
     file_name = os.path.join(OUTPUT_DIR, "output_{:%Y%m%dT%H%M%S}.avi".format(datetime.datetime.now()))
     fourcc = cv2.VideoWriter_fourcc(*'DIVX')
-    vwriter = cv2.VideoWriter(file_name, fourcc, fps, (1600, 1600))
+    vwriter = cv2.VideoWriter(file_name, fourcc, fps, (width, height))
     count = 0
     success = True
     while success:
