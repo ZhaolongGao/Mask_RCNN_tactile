@@ -16,6 +16,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import colorsys
 import matplotlib.patches as patches
+import cv2
 
 # Root directory of the project
 ROOT_DIR = os.path.abspath("../../")
@@ -114,35 +115,20 @@ weights_path = GRASBA_WEIGHTS_PATH
 print("Loading weights ", weights_path)
 model.load_weights(weights_path, by_name=True)
 
-# 加载数据
-# 图像和视频选择
-image_path = os.path.join(GRASBA_DIR, "val", "red_ball.png")
-# image_path = None
-video_path = os.path.join(GRASBA_DIR, "val", "red_ball.mp4")
-video_path = None
 # 标注颜色选取
 MAX_CLASSES = 5
 colors = real_time_visual.random_colors(MAX_CLASSES)
 
-if image_path:
-    print("Running on {}".format(image_path))
-    # 读取图片
-    image = skimage.io.imread(image_path)
-    # 识别物体
-    result = model.detect([image], verbose=1)
-    # 操作
-    image_output = apply_effect(image, result, colors)
-    # 输出
-    file_name = os.path.join(OUTPUT_DIR, "output_{:%Y%m%dT%H%M%S}.png".format(datetime.datetime.now()))
-    skimage.io.imsave(file_name, image_output)
-elif video_path:
-    import cv2
-    vcapture = cv2.VideoCapture(video_path)
+
+# 加载摄像头数据
+vcapture = cv2.VideoCapture(0)
+ret, frame = vcapture.read()
+if ret:
     width = int(vcapture.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(vcapture.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = vcapture.get(cv2.CAP_PROP_FPS)
 
-    # video writer
+    # 录像文件
     file_name = os.path.join(OUTPUT_DIR, "output_{:%Y%m%dT%H%M%S}.avi".format(datetime.datetime.now()))
     fourcc = cv2.VideoWriter_fourcc(*'DIVX')
     vwriter = cv2.VideoWriter(file_name, fourcc, fps, (width, height))
@@ -162,7 +148,13 @@ elif video_path:
             image_output = image_output[..., ::-1]
             #print(image_output.shape)
             # Add image to video writer
+            cv2.imshow('Real-time Detection', image_output)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
             vwriter.write(image_output)
             count += 1
     vwriter.release()
-print("Saved to ", file_name)
+    cv2.destroyAllWindows()
+    print("Saved to ", file_name)
+else:
+    print('sorry, no camera. I quit\n')

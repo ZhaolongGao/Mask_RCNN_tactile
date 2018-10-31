@@ -145,7 +145,7 @@ class GrasbaDataset(utils.Dataset):
 
             self.add_image(
                 "grasba",
-                image_id=a['filename'],  # TODO: make file name unique to be a valid id
+                image_id=a['filename'],
                 path=image_path,
                 width=width, height=height,
                 polygons=polygons,
